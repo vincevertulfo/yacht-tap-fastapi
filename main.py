@@ -26,17 +26,21 @@ async def predict_time_to_burn(request: Request):
     except json.JSONDecodeError as e:
         return {"error": "Invalid JSON"}
     
-    wind_angle = json_data.get('wind_angle')
-    wind_speed = json_data.get('wind_speed')
-    input = np.array([[wind_angle, wind_speed]])
+    wind_speed = json_data.get('wind_speed')                    # UNIT: nautical miles / hour
+    time_remaining = json_data.get('time_remaining')            # UNIT: seconds
+    true_wind_angle = json_data.get('true_wind_angle')          # UNIT: degree
+    
+    input = np.array([[true_wind_angle, wind_speed]])
     boat_speed = model.predict(input)[0]
     
-    distance = json_data.get('distance')
-    time_to_burn = distance / boat_speed
+    distance = json_data.get('distance')                        # UNIT: miles -> nautical miles
+
+    time_to_burn = time_remaining - (distance / boat_speed)     # UNIT: seconds
     
     data =  {
             'boat_speed' : boat_speed,
             'distance' : distance,
+            'time_remaining' : time_remaining,
             'time_to_burn' : time_to_burn
         }
     return JSONResponse(
